@@ -27,7 +27,7 @@ import com.yanzhenjie.permission.source.Source;
 /**
  * Created by YanZhenjie on 2018/4/30.
  */
-public class SettingPage {
+class SettingPage {
 
     private static final String MARK = Build.MANUFACTURER.toLowerCase();
 

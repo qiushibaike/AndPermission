@@ -47,7 +47,7 @@ public class Runtime implements RuntimeOption {
         }
     }
 
-    public interface PermissionRequestFactory {
+    interface PermissionRequestFactory {
 
         /**
          * Create permission request.
@@ -84,8 +84,9 @@ public class Runtime implements RuntimeOption {
     }
 
     /**
-     * Check if the permissions are valid and each permission has been registered in manifest.xml. This method will
-     * throw a exception if permissions are invalid or there is any permission which is not registered in manifest.xml.
+     * Check if the permissions are valid and each permission has been registered in manifest.xml.
+     * This method will throw a exception if permissions are invalid or there is any permission
+     * which is not registered in manifest.xml.
      *
      * @param permissions permissions which will be checked.
      */
@@ -99,9 +100,9 @@ public class Runtime implements RuntimeOption {
         for (String p : permissions) {
             if (!sAppPermissions.contains(p)) {
                 if (!(Permission.ADD_VOICEMAIL.equals(p) &&
-                    sAppPermissions.contains(Permission.ADD_VOICEMAIL_MANIFEST))) {
+                        sAppPermissions.contains(Permission.ADD_VOICEMAIL_MANIFEST))) {
                     throw new IllegalStateException(
-                        String.format("The permission %1$s is not registered in manifest.xml", p));
+                            String.format("The permission %1$s is not registered in manifest.xml", p));
                 }
             }
         }
@@ -113,7 +114,7 @@ public class Runtime implements RuntimeOption {
     private static List<String> getManifestPermissions(Context context) {
         try {
             PackageInfo packageInfo = context.getPackageManager()
-                .getPackageInfo(context.getPackageName(), PackageManager.GET_PERMISSIONS);
+                    .getPackageInfo(context.getPackageName(), PackageManager.GET_PERMISSIONS);
             String[] permissions = packageInfo.requestedPermissions;
             if (permissions == null || permissions.length == 0) {
                 throw new IllegalStateException("You did not register any permissions in the manifest.xml.");

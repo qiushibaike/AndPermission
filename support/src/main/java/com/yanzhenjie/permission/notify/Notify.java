@@ -45,7 +45,7 @@ public class Notify implements NotifyOption {
         }
     }
 
-    public interface PermissionRequestFactory {
+    interface PermissionRequestFactory {
 
         /**
          * Create notify request.
