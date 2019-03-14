@@ -19,6 +19,8 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 
+import java.lang.reflect.Field;
+
 /**
  * Created by YanZhenjie on 2018/1/15.
  */
@@ -33,16 +35,50 @@ class CameraTest implements PermissionTest {
     @Override
     public boolean test() throws Throwable {
         Camera camera = null;
+        boolean hasPermission = false;
         try {
             camera = Camera.open();
             Camera.Parameters parameters = camera.getParameters();
             camera.setParameters(parameters);
             camera.setPreviewCallback(PREVIEW_CALLBACK);
             camera.startPreview();
-            return true;
+
+            if (!ManufacturerSupportUtil.isAndroidM()) {
+                if (ManufacturerSupportUtil.isVIVO()) {
+                    try {
+                        Field fieldPassword = camera.getClass().getDeclaredField("mHasPermission");
+                        fieldPassword.setAccessible(true);
+                        hasPermission = (boolean) fieldPassword.get(camera);
+                        L.logw("Vivo手机，权限：" + hasPermission);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        L.logw("Vivo手机，认为没有权限");
+                        hasPermission = false;
+                    }
+                }/* else if (ManufacturerSupportUtil.isMEIZU()) {
+                    try {
+                        // setParameters 是针对魅族MX5 做的。MX5 通过Camera.open() 拿到的Camera对象不为null
+                        Camera.Parameters mParameters = camera.getParameters();
+                        camera.setParameters(mParameters);
+                        hasPermission = true;
+                        L.loge("Meizu手机，认为有权限");
+                    } catch (Exception e) {
+                        L.loge("Meizu手机，认为没有权限");
+                        hasPermission = false;
+                    }
+                }*/ else {
+                    L.logi("没有抛出异常认为有Camera权限，手机品牌：" + ManufacturerSupportUtil.getManufacturer());
+                    hasPermission = true;
+                }
+            } else {
+                L.logi("Android6.x+没有抛出异常认为有Camera权限，手机品牌：" + ManufacturerSupportUtil.getManufacturer());
+                hasPermission = true;
+            }
         } catch (Throwable e) {
-            PackageManager packageManager = mContext.getPackageManager();
-            return !packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA);
+            L.logw("抛出异常认为没有Camera权限，手机品牌：" + ManufacturerSupportUtil.getManufacturer());
+            boolean existCamera = existCamera(mContext);
+            hasPermission = !existCamera;
+            return hasPermission;
         } finally {
             if (camera != null) {
                 camera.stopPreview();
@@ -50,6 +86,12 @@ class CameraTest implements PermissionTest {
                 camera.release();
             }
         }
+        return hasPermission;
+    }
+
+    private static boolean existCamera(Context context) {
+        PackageManager packageManager = context.getPackageManager();
+        return packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA);
     }
 
     private static final Camera.PreviewCallback PREVIEW_CALLBACK = new Camera.PreviewCallback() {

@@ -17,7 +17,6 @@ package com.yanzhenjie.permission.checker;
 
 import android.content.ContentResolver;
 import android.content.Context;
-import android.os.Build;
 
 import com.yanzhenjie.permission.runtime.Permission;
 
@@ -33,7 +32,7 @@ public final class StrictChecker implements PermissionChecker {
 
     @Override
     public boolean hasPermission(Context context, String... permissions) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return true;
+//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return true;
 
         for (String permission : permissions) {
             if (!hasPermission(context, permission)) {
@@ -45,7 +44,7 @@ public final class StrictChecker implements PermissionChecker {
 
     @Override
     public boolean hasPermission(Context context, List<String> permissions) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return true;
+//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return true;
 
         for (String permission : permissions) {
             if (!hasPermission(context, permission)) {

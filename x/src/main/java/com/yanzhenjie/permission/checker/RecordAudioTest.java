@@ -17,17 +17,17 @@ package com.yanzhenjie.permission.checker;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.os.SystemClock;
+
+import java.io.File;
 
 /**
  * Created by YanZhenjie on 2018/1/14.
  */
 class RecordAudioTest implements PermissionTest {
 
-    private static final int[] RATES = new int[] {8000, 11025, 22050, 44100};
-
+    private static final long SLEEP_CHECK_MILLIS = 50L;
     private Context mContext;
 
     RecordAudioTest(Context context) {
@@ -36,43 +36,66 @@ class RecordAudioTest implements PermissionTest {
 
     @Override
     public boolean test() throws Throwable {
-        AudioRecord audioRecord = findAudioRecord();
+        File mTempFile = null;
+        MediaRecorder mediaRecorder = new MediaRecorder();
+        boolean hasPermission;
         try {
-            if (audioRecord != null) {
-                audioRecord.startRecording();
+            mTempFile = File.createTempFile("permission", "test");
+
+            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
+            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+            mediaRecorder.setOutputFile(mTempFile.getAbsolutePath());
+            mediaRecorder.prepare();
+            mediaRecorder.start();
+
+            if (!ManufacturerSupportUtil.isAndroidM()) {
+                if (ManufacturerSupportUtil.isHUAWEI()
+                        || ManufacturerSupportUtil.isOPPO()
+                        || ManufacturerSupportUtil.isVIVO()
+                        || ManufacturerSupportUtil.isXIAOMI()
+                        || ManufacturerSupportUtil.isNubia()) {
+                    // oppo/vivo/huawei/xiaomi/nubia部分机型即使权限禁止后，不会抛异常，需要延迟SLEEP_CHECK_MILLIS重新检测
+                    String name = Thread.currentThread().getName();
+                    L.logw("即使权限禁止后，也不会抛异常，需要sleep " + SLEEP_CHECK_MILLIS + "ml重新检测，手机品牌：" + ManufacturerSupportUtil.getManufacturer() + "，" + name);
+                    SystemClock.sleep(SLEEP_CHECK_MILLIS);
+                    if (mTempFile != null && mTempFile.exists() && mTempFile.length() > 0) {
+                        hasPermission = true;
+                        L.logi("录音文件大于0，认为有权限，手机品牌：" + ManufacturerSupportUtil.getManufacturer() + "，文件大小：" + mTempFile.length());
+                    } else {
+                        hasPermission = false;
+                        L.logw("录音文件小于0，没有权限，手机品牌：" + ManufacturerSupportUtil.getManufacturer());
+                    }
+                } else {
+                    L.logi("其他手机认为有Audio权限，手机品牌：" + ManufacturerSupportUtil.getManufacturer());
+                    hasPermission = true;
+                }
             } else {
-                return !existMicrophone(mContext);
+                L.logi("Android6.x+手机认为有Audio权限，手机品牌：" + ManufacturerSupportUtil.getManufacturer());
+                hasPermission = true;
             }
         } catch (Throwable e) {
-            return !existMicrophone(mContext);
+            hasPermission = !existMicrophone(mContext);
         } finally {
-            if (audioRecord != null) {
-                audioRecord.stop();
-                audioRecord.release();
+            try {
+                mediaRecorder.stop();
+            } catch (Exception ignored) {
+            }
+            try {
+                mediaRecorder.release();
+            } catch (Exception ignored) {
+            }
+
+            if (mTempFile != null && mTempFile.exists()) {
+                mTempFile.delete();
             }
         }
-        return true;
+        return hasPermission;
     }
 
     private static boolean existMicrophone(Context context) {
         PackageManager packageManager = context.getPackageManager();
         return packageManager.hasSystemFeature(PackageManager.FEATURE_MICROPHONE);
-    }
-
-    private static AudioRecord findAudioRecord() {
-        for (int rate : RATES) {
-            for (short format : new short[] {AudioFormat.ENCODING_PCM_8BIT, AudioFormat.ENCODING_PCM_16BIT}) {
-                for (short channel : new short[] {AudioFormat.CHANNEL_IN_MONO, AudioFormat.CHANNEL_IN_STEREO}) {
-                    int buffer = AudioRecord.getMinBufferSize(rate, channel, format);
-                    if (buffer != AudioRecord.ERROR_BAD_VALUE) {
-                        AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC, rate, channel, format,
-                            buffer);
-                        if (recorder.getState() == AudioRecord.STATE_INITIALIZED) return recorder;
-                    }
-                }
-            }
-        }
-        return null;
     }
 
 }
