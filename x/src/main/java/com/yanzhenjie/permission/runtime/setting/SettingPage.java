@@ -15,6 +15,7 @@
  */
 package com.yanzhenjie.permission.runtime.setting;
 
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -27,9 +28,22 @@ import com.yanzhenjie.permission.source.Source;
 /**
  * Created by Zhenjie Yan on 2018/4/30.
  */
-class SettingPage {
+public class SettingPage {
 
     private static final String MARK = Build.MANUFACTURER.toLowerCase();
+
+    private static final String MANUFACTURER_HUAWEI = "huawei";//华为
+    private static final String MANUFACTURER_XIAOMI = "xiaomi";//小米
+    private static final String MANUFACTURER_OPPO = "oppo";
+    private static final String MANUFACTURER_VIVO = "vivo";
+    private static final String MANUFACTURER_MEIZU = "meizu";//魅族
+    private static final String MANUFACTURER_SONY = "sony";//索尼
+    private static final String MANUFACTURER_LG = "lg";
+    private static final String MANUFACTURER_SAMSUNG = "samsung";//三星
+    private static final String MANUFACTURER_LETV = "letv";//乐视
+    private static final String MANUFACTURER_ZTE = "zte";//中兴
+    private static final String MANUFACTURER_YULONG = "YuLong";//酷派
+    private static final String MANUFACTURER_LENOVO = "lenovo";//联想
 
     private Source mSource;
 
@@ -44,16 +58,22 @@ class SettingPage {
      */
     public void start(int requestCode) {
         Intent intent;
-        if (MARK.contains("huawei")) {
+        if (MARK.contains(MANUFACTURER_HUAWEI)) {
             intent = huaweiApi(mSource.getContext());
-        } else if (MARK.contains("xiaomi")) {
+        } else if (MARK.contains(MANUFACTURER_XIAOMI)) {
             intent = xiaomiApi(mSource.getContext());
-        } else if (MARK.contains("oppo")) {
+        } else if (MARK.contains(MANUFACTURER_OPPO)) {
             intent = oppoApi(mSource.getContext());
-        } else if (MARK.contains("vivo")) {
+        } else if (MARK.contains(MANUFACTURER_VIVO)) {
             intent = vivoApi(mSource.getContext());
-        } else if (MARK.contains("meizu")) {
+        } else if (MARK.contains(MANUFACTURER_MEIZU)) {
             intent = meizuApi(mSource.getContext());
+        } else if (MARK.contains(MANUFACTURER_SONY)) {
+            intent = sonyApi(mSource.getContext());
+        } else if (MARK.contains(MANUFACTURER_LG)) {
+            intent = LG(mSource.getContext());
+        } else if (MARK.contains(MANUFACTURER_LETV)) {
+            intent = Letv(mSource.getContext());
         } else {
             intent = defaultApi(mSource.getContext());
         }
@@ -63,6 +83,56 @@ class SettingPage {
             intent = defaultApi(mSource.getContext());
             mSource.startActivityForResult(intent, requestCode);
         }
+    }
+
+    public static Intent LG(Context context) {
+        Intent intent = new Intent("android.intent.action.MAIN");
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.putExtra("packageName", context.getPackageName());
+        ComponentName comp = new ComponentName("com.android.settings", "com.android.settings.Settings$AccessLockSummaryActivity");
+        intent.setComponent(comp);
+        if (hasActivity(context, intent)) {
+            return intent;
+        }
+        return defaultApi(context);
+    }
+
+    public static Intent Letv(Context context) {
+        Intent intent = new Intent();
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.putExtra("packageName", context.getPackageName());
+        ComponentName comp = new ComponentName("com.letv.android.letvsafe", "com.letv.android.letvsafe.PermissionAndApps");
+        intent.setComponent(comp);
+        if (hasActivity(context, intent)) {
+            return intent;
+        }
+        return defaultApi(context);
+    }
+
+    /**
+     * 只能打开到自带安全软件
+     *
+     */
+    public static Intent _360(Context context) {
+        Intent intent = new Intent("android.intent.action.MAIN");
+        intent.putExtra("packageName", context.getPackageName());
+        ComponentName comp = new ComponentName("com.qihoo360.mobilesafe", "com.qihoo360.mobilesafe.ui.index.AppEnterActivity");
+        intent.setComponent(comp);
+        if (hasActivity(context, intent)) {
+            return intent;
+        }
+        return defaultApi(context);
+    }
+
+    private static Intent sonyApi(Context context) {
+        Intent intent = new Intent();
+        intent.putExtra("packageName", context.getPackageName());
+        ComponentName comp = new ComponentName("com.sonymobile.cta", "com.sonymobile.cta.SomcCTAMainActivity");
+        intent.setComponent(comp);
+        if (hasActivity(context, intent)) {
+            return intent;
+        }
+        return defaultApi(context);
     }
 
     private static Intent defaultApi(Context context) {
