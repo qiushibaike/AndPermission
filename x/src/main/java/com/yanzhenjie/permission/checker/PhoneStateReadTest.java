@@ -25,6 +25,13 @@ import android.text.TextUtils;
  */
 class PhoneStateReadTest implements PermissionTest {
 
+    /**
+     * 默认的deviceid
+     *
+     * 1. 华为horor6
+     */
+    private static final String DEFAULT_DEVICEID = "000000000000000";
+
     private Context mContext;
 
     PhoneStateReadTest(Context context) {
@@ -36,9 +43,29 @@ class PhoneStateReadTest implements PermissionTest {
         PackageManager packageManager = mContext.getPackageManager();
         if (!packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) return true;
 
-        TelephonyManager telephonyManager = (TelephonyManager)mContext.getSystemService(Context.TELEPHONY_SERVICE);
-        return telephonyManager.getPhoneType() == TelephonyManager.PHONE_TYPE_NONE ||
-            !TextUtils.isEmpty(telephonyManager.getDeviceId()) ||
-            !TextUtils.isEmpty(telephonyManager.getSubscriberId());
+        TelephonyManager tm = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
+
+        // No phone radio
+        if (tm.getPhoneType() == TelephonyManager.PHONE_TYPE_NONE) {
+            L.logi(" No phone radio，PhoneType为：" + tm.getPhoneType());
+            return true;
+        }
+        String deviceId = tm.getDeviceId();
+        boolean b1 = !TextUtils.isEmpty(deviceId) && !(TextUtils.equals(deviceId, DEFAULT_DEVICEID));
+        if (b1) {
+            L.logi("有deviceId：" + deviceId + "，设备品牌：" + ManufacturerSupportUtil.getManufacturer());
+            return true;
+        }
+
+        String subscriberId = tm.getSubscriberId();
+
+        boolean b2 = !TextUtils.isEmpty(subscriberId) && !(TextUtils.equals(subscriberId, DEFAULT_DEVICEID));
+        if (b2) {
+            L.logi("有subscriberId：" + subscriberId + "，设备品牌：" + ManufacturerSupportUtil.getManufacturer());
+            return true;
+        }
+
+        L.logw("获取不到deviceid，没有READ_PHONE_STATE，deviceId：" + deviceId);
+        return false;
     }
 }
